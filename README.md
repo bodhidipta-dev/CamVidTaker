@@ -7,6 +7,7 @@ Feel free to contribute more ideas.
 <b> How to Implement </b>
 
  This will return an instrance of the implementation class 
+ 
                 val cameraViewListener: CameraViewListener = CameraVideoTaker
                 .setCameraView(cameraview)
                 .shouldCompress(true) // If not required dont need to send
