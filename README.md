@@ -58,4 +58,14 @@ to avoid memory leak from camera or any allocated surface object.
         }
     }    
   
-  
+# Dependency Added
+    To add on your project on your app build.gradle file add implementation as
+
+            implementation 'com.internal.bodhidipta.camvid:camvid:1.0.1'
+
+     and
+            repositories{
+                maven {
+                    url  "https://dl.bintray.com/bodhidipta-dev/CamVidTaker"
+                }
+            }
