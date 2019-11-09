@@ -69,3 +69,9 @@ to avoid memory leak from camera or any allocated surface object.
                     url  "https://dl.bintray.com/bodhidipta-dev/CamVidTaker"
                 }
             }
+Add View on your Xml as 
+ 
+     <com.internal.bodhidipta.camvid.view.AutoFitTextureView
+    android:id="@+id/cameraview"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />
