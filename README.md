@@ -40,7 +40,7 @@ or
     cameraViewListener.clickVideoViewtoggle()
 
 Place the codes for onResume,onPause and OnStop
-to avoid memory leak from camera or any un-release surface
+to avoid memory leak from camera or any allocated surface object.
     
      override fun onResume() {
         super.onResume()
