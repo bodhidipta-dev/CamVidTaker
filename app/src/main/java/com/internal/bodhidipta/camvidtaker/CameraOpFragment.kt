@@ -79,7 +79,7 @@ class CameraOpFragment : Fragment() {
                     }
 
                 }, {
-
+                    // Your Error Fallback here
                 })
             } else {
                 record = true
