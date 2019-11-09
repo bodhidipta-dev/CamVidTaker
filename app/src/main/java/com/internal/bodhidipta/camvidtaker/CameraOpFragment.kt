@@ -11,6 +11,10 @@ import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.google.android.material.tabs.TabLayout
+import com.internal.bodhidipta.camvid.cameravideotaker.CameraVideoTaker
+import com.internal.bodhidipta.camvid.cameravideotaker.CameraViewListener
+import com.internal.bodhidipta.camvid.required.CommonClass
+import com.internal.bodhidipta.camvid.view.AutoFitTextureView
 import java.io.File
 
 
