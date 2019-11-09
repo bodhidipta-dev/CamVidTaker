@@ -1,4 +1,5 @@
-# CamVidTaker
+# CamVidTaker [ ![Download](https://api.bintray.com/packages/bodhidipta-dev/CamVidTaker/com.internal.bodhidipta.camvid/images/download.svg) ](https://bintray.com/bodhidipta-dev/CamVidTaker/com.internal.bodhidipta.camvid/_latestVersion)
+
 Wrapper for both camera and video, seamless switching between camera to video and video to camera mode without restarting camera preview. Also  added 90% compression on the video quality along with original one.
 Feel free to contribute more ideas.
 
