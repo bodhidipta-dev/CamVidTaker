@@ -1,0 +1,17 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.internal.bodhidipta.camvid" >
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+<supports-screens
+android:largeScreens="true"
+android:normalScreens="true"
+android:smallScreens="true"
+android:xlargeScreens="true" />
+    <!-- Have developers add this. We don't want AUDIO permission to be auto-added to
+         apps that just want to take pictures. -->
+    <!-- uses-permission android:name="android.permission.RECORD_AUDIO" /-->
+<uses-feature android:name="android.hardware.camera" />
+<uses-feature android:name="android.hardware.camera.autofocus" />
+</manifest>

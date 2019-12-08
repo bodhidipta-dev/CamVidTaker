@@ -40,6 +40,7 @@ class CameraOpFragment : Fragment() {
         activity?.let {
             cameraViewListener = CameraVideoTaker
                 .setCameraView(cameraview)
+                .shouldCompress(true)
                 .setRatio(CommonClass.ImageAspectRatio.FULL)
                 .getInitialise(it)
         }
