@@ -92,6 +92,7 @@ to avoid memory leak from camera or any allocated surface object.
 # Code source
 Camera example taken from
 https://github.com/googlearchive/android-Camera2Basic
+
 Face detection code source is taken from
 https://github.com/googlesamples/android-vision
  
