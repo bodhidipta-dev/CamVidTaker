@@ -101,9 +101,23 @@ https://github.com/googlesamples/android-vision
 
             implementation 'com.internal.bodhidipta:camvid:1.0.5'
 
-Add View on your Xml as 
+Add View on your Xml for normal Camera action 
  
      <com.internal.bodhidipta.camvid.view.AutoFitTextureView
     android:id="@+id/cameraview"
     android:layout_width="match_parent"
     android:layout_height="match_parent" />
+
+Add View on your Xml for face detection operation 
+
+     <com.internal.bodhidipta.camvid.view.CameraSourcePreview
+        android:id="@+id/preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.internal.bodhidipta.camvid.view.GraphicOverlay
+            android:id="@+id/faceOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.internal.bodhidipta.camvid.view.CameraSourcePreview>
