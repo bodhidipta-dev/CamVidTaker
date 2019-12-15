@@ -88,7 +88,13 @@ to avoid memory leak from camera or any allocated surface object.
         cameraViewListener.onStopView()
         }
     }    
-  
+ 
+# Code source
+Camera example taken from
+https://github.com/googlearchive/android-Camera2Basic
+Face detection code source is taken from
+https://github.com/googlesamples/android-vision
+ 
 # Dependency Added
   On your project's app build.gradle file add implementation as
 
