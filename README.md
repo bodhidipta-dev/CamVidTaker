@@ -100,6 +100,7 @@ https://github.com/googlesamples/android-vision
   On your project's app build.gradle file add implementation as
 
             implementation 'com.internal.bodhidipta:camvid:1.0.5'
+            implementation 'com.google.android.gms:play-services-vision:19.0.0' // For face detection
 
 Add View on your Xml for normal Camera action 
  
