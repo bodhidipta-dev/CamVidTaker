@@ -10,11 +10,14 @@ import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.google.android.gms.vision.face.Face
 import com.google.android.material.tabs.TabLayout
-import com.internal.bodhidipta.camvid.cameravideotaker.CameraVideoTaker
+import com.internal.bodhidipta.camvid.cameravideotaker.CamVidBuilder
 import com.internal.bodhidipta.camvid.cameravideotaker.CameraViewListener
+import com.internal.bodhidipta.camvid.cameravideotaker.FaceDetectionCallback
 import com.internal.bodhidipta.camvid.required.CommonClass
-import com.internal.bodhidipta.camvid.view.AutoFitTextureView
+import com.internal.bodhidipta.camvid.required.DetectorOperationMode
+import kotlinx.android.synthetic.main.cameraview_surface_view.*
 import java.io.File
 
 
@@ -33,13 +36,32 @@ class CameraOpFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val cameraview: AutoFitTextureView = view.findViewById(R.id.cameraview)
         val imageContainer: RelativeLayout = view.findViewById(R.id.image_container)
         val flash_option: ImageView = view.findViewById(R.id.flash_option)
         val operation_mode: TabLayout = view.findViewById(R.id.operation_mode)
         activity?.let {
-            cameraViewListener = CameraVideoTaker
-                .setCameraView(cameraview)
+            cameraViewListener = CamVidBuilder()
+                .setCameraView(
+                    DetectorOperationMode(
+                        cameraSourcePreview = preview,
+                        graphicOverlay = faceOverlay,
+                        shouldDrawFace = true
+                    )
+                )
+                .setCaptureCallback {
+
+                }
+                .setDetectionCallback(object : FaceDetectionCallback {
+                    override fun onUpdateFaceCount(totalFace: List<Int>) {
+                       //To change body of created functions use File | Settings | File Templates.
+                    }
+
+                    override fun onFaceUpdate(face: Face?) {
+                         //To change body of created functions use File | Settings | File Templates.
+                    }
+
+                })
+
                 .shouldCompress(true)
                 .setRatio(CommonClass.ImageAspectRatio.FULL)
                 .getInitialise(it)
@@ -124,6 +146,14 @@ class CameraOpFragment : Fragment() {
         })
 
 
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ::cameraViewListener.isInitialized.let {
+            if (it)
+                cameraViewListener.onDestroy()
+        }
     }
 
     override fun onResume() {

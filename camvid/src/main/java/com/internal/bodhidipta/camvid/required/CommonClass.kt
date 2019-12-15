@@ -9,6 +9,7 @@ import android.util.Size
 import android.util.SparseIntArray
 import android.view.OrientationEventListener
 import android.view.Surface
+import com.google.android.gms.vision.CameraSource
 import com.internal.bodhidipta.camvid.view.AutoFitTextureView
 import java.io.File
 import java.util.*
@@ -35,7 +36,7 @@ open class CommonClass {
     protected var recordingOngoing = false
     protected var cameraOperationMode: OperationalMode = OperationalMode.PICTURE
     protected var useFlashMode = FlashMode.OFF
-    protected var cameraPrefernce = CameraCharacteristics.LENS_FACING_BACK
+    protected var cameraPrefernce = CameraCharacteristics.LENS_FACING_FRONT
     protected lateinit var cameraManager: CameraManager
     protected var mediaRecorder: MediaRecorder? = null
     protected lateinit var file: File
@@ -51,7 +52,6 @@ open class CommonClass {
     protected var sensorOrientation = 0
     protected lateinit var previewSize: Size
     protected lateinit var largest: Size
-    protected lateinit var textureView: AutoFitTextureView
     protected var flashSupported = false
     protected var backgroundThread: HandlerThread? = null
     protected var backgroundHandler: Handler? = null

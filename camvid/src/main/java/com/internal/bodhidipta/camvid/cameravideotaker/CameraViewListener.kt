@@ -6,6 +6,7 @@ interface CameraViewListener {
     fun onResumeView()
     fun onPauseView()
     fun onStopView()
+    fun onDestroy()
     fun clickCameraCapture()
     fun clickCameraViewToggle()
     fun startVideoCapture(): Boolean

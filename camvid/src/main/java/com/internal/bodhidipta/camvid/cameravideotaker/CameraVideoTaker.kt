@@ -24,24 +24,33 @@ import android.view.Surface
 import android.view.TextureView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
+import com.google.android.gms.vision.CameraSource
+import com.google.android.gms.vision.MultiProcessor
+import com.google.android.gms.vision.face.FaceDetector
 import com.internal.bodhidipta.camvid.compress.CompressAsynchronous
 import com.internal.bodhidipta.camvid.required.*
 import com.internal.bodhidipta.camvid.view.AutoFitTextureView
+import com.internal.bodhidipta.camvid.view.CameraSourcePreview
+import com.internal.bodhidipta.camvid.view.GraphicOverlay
 import java.io.File
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class CameraVideoTaker private constructor(
+internal class CameraVideoTaker constructor(
     private val context: Activity,
     private val aspectRatio: ImageAspectRatio,
     private val predefinedImagePath: String?,
     private val predefinedVideoPath: String?,
-    mtextureview: AutoFitTextureView,
+    private val textureView: AutoFitTextureView?,
+    private val cameraSourcePreview: CameraSourcePreview?,
+    private val graphicOverlay: GraphicOverlay?,
     private val shouldCompress: Boolean = false,
-    private val mwasureSensor: SensorEventListener? = null,
-    private val captureCompleteCallback: (path: String) -> Unit = {}
+    private val measureSensor: SensorEventListener? = null,
+    private val shouldDetectFace: Boolean = false,
+    private val deatectDrawFace: Boolean = false,
+    private val captureCompleteCallback: (path: String) -> Unit = {},
+    private val detectCallback: FaceDetectionCallback
 ) : CommonClass(),
     CameraViewListener {
     private lateinit var mSurface: Surface
@@ -49,13 +58,12 @@ class CameraVideoTaker private constructor(
     private lateinit var mAccelerometer: Sensor
 
     init {
-        mwasureSensor?.let {
+        measureSensor?.let {
             sensormanager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
             mAccelerometer = sensormanager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
             sensormanager.registerListener(it, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
         }
 
-        textureView = mtextureview
         file = if (predefinedImagePath == null)
             File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "CamVidTaker")
         else
@@ -73,92 +81,30 @@ class CameraVideoTaker private constructor(
             }
         }
         orientationEventListener.enable()
+
+        if (shouldDetectFace)
+            createDetectionCamera()
     }
 
-    companion object Builder {
-        private var imagePath: String? = null
-        private var videoPath: String? = null
-        private var shouldCompress: Boolean = false
-        private var passedTextureView: AutoFitTextureView? = null
-        private var t_accelerometer: SensorEventListener? = null
-        private var ratio: ImageAspectRatio = ImageAspectRatio.FULL
-        private var captureCompleteCallback: (path: String) -> Unit = {}
-
-        fun setRatio(aspectRation: ImageAspectRatio): Builder {
-            ratio = aspectRation
-            return this
-        }
-
-        fun setCameraView(mCameraView: AutoFitTextureView): Builder {
-            passedTextureView = mCameraView
-            return this
-        }
-
-        fun setCameraImagePath(absolutePath: String): Builder {
-            imagePath = absolutePath
-            return this
-        }
-
-        fun shouldCompress(compress: Boolean): Builder {
-            shouldCompress = compress
-            return this
-        }
-
-        fun accelerometerSensor(accelerometer: SensorEventListener): Builder {
-            t_accelerometer = accelerometer
-            return this
-        }
-
-        fun setVideoImagePath(absolutePath: String): Builder {
-            videoPath = absolutePath
-            return this
-        }
-
-        fun setCaptureCallback(callback: (path: String) -> Unit) {
-            captureCompleteCallback = callback
-        }
-
-        fun getInitialise(context: Activity):
-                CameraViewListener = passedTextureView?.let {
-            CameraVideoTaker(
-                context,
-                ratio,
-                imagePath,
-                videoPath,
-                it,
-                shouldCompress,
-                t_accelerometer,
-                captureCompleteCallback
-            )
-        } ?: throw ExceptionInInitializerError("Must have to provide texture view.")
-
-
-        fun getInitialise(context: FragmentActivity):
-                CameraViewListener = passedTextureView?.let {
-            CameraVideoTaker(
-                context,
-                ratio,
-                imagePath,
-                videoPath,
-                it,
-                shouldCompress,
-                t_accelerometer,
-                captureCompleteCallback
-            )
-        } ?: throw ExceptionInInitializerError("Must have to provide texture view.")
-
-    }
 
     private val surfaceTextureListener = object : TextureView.SurfaceTextureListener {
 
-        override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
+        override fun onSurfaceTextureAvailable(
+            texture: SurfaceTexture,
+            width: Int,
+            height: Int
+        ) {
             /*
             * When the texture available open the camera
             * */
             openCamera(width, height)
         }
 
-        override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) {
+        override fun onSurfaceTextureSizeChanged(
+            texture: SurfaceTexture,
+            width: Int,
+            height: Int
+        ) {
             /*
             * Surface texture change and resize
             * */
@@ -170,6 +116,7 @@ class CameraVideoTaker private constructor(
         override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
 
     }
+    private var mCameraSource: CameraSource? = null
 
     @SuppressLint("MissingPermission")
     private fun openCamera(width: Int, height: Int) {
@@ -185,7 +132,10 @@ class CameraVideoTaker private constructor(
             return
         }
         val storagepermission =
-            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
         if (storagepermission != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(
                 context,
@@ -199,7 +149,6 @@ class CameraVideoTaker private constructor(
         cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
         for (cameraId in cameraManager.cameraIdList) {
-
             val characteristics = cameraManager.getCameraCharacteristics(cameraId)
             val cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING)
 
@@ -216,8 +165,9 @@ class CameraVideoTaker private constructor(
                 // coordinate.
                 val displayRotation = context.windowManager.defaultDisplay.rotation
 
-                sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
-                    ?: continue
+                sensorOrientation =
+                    characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
+                        ?: continue
                 val swappedDimensions = areDimensionsSwapped(displayRotation)
                 val displaySize = Point()
                 context.windowManager.defaultDisplay.getSize(displaySize)
@@ -251,9 +201,9 @@ class CameraVideoTaker private constructor(
 
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 if (context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    textureView.setAspectRatio(previewSize.width, previewSize.height)
+                    textureView?.setAspectRatio(previewSize.width, previewSize.height)
                 } else {
-                    textureView.setAspectRatio(previewSize.height, previewSize.width)
+                    textureView?.setAspectRatio(previewSize.height, previewSize.width)
                 }
 
                 // Check if the flash is supported.
@@ -265,7 +215,9 @@ class CameraVideoTaker private constructor(
         }
 
         configureTransform(width, height)
+
         mediaRecorder = MediaRecorder()
+
         try {
             // Wait for camera to open - 2.5 seconds is sufficient
             if (!cameraOpenCloseLock.tryAcquire(5000, TimeUnit.MILLISECONDS)) {
@@ -273,15 +225,49 @@ class CameraVideoTaker private constructor(
             }
             cameraManager.openCamera(cameraId, stateCallback, backgroundHandler)
 
+
         } catch (e: CameraAccessException) {
             Log.e(TAG, e.toString())
-            Toast.makeText(context, "Can not open more than one camera.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Can not open more than one camera.", Toast.LENGTH_SHORT)
+                .show()
         } catch (e: InterruptedException) {
             e.printStackTrace()
             Toast.makeText(context, "Camera could not be accessed.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun createDetectionCamera() {
+        val detector: FaceDetector = FaceDetector.Builder(context)
+            .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
+            .build()
+
+        detector.setProcessor(
+            MultiProcessor.Builder(
+                GraphicFaceTrackerFactory(
+                    graphicOverlay!!,
+                    deatectDrawFace,
+                    detectCallback
+                )
+            )
+                .build()
+        )
+
+        if (!detector.isOperational) { // Note: The first time that an app using face API is installed on a device, GMS will
+// download a native library to the device in order to do detection.  Usually this
+// completes before the app is run for the first time.  But if that download has not yet
+// completed, then the above call will not detect any faces.
+//
+// isOperational() can be used to check if the required native library is currently
+// available.  The detector will automatically become operational once the library
+// download completes on device.
 
         }
 
+        mCameraSource = CameraSource.Builder(context, detector)
+            .setRequestedPreviewSize(640, 480)
+            .setFacing(CameraSource.CAMERA_FACING_FRONT)
+            .setRequestedFps(10.0f)
+            .build()
     }
 
     private val stateCallback = object : CameraDevice.StateCallback() {
@@ -308,16 +294,16 @@ class CameraVideoTaker private constructor(
     private fun createCameraPreviewSession() {
         try {
             cameraDevice?.let {
-                if (!textureView.isAvailable) return
+                if (textureView?.isAvailable == false) return
 
                 /* Close any previous session*/
                 captureSession?.close()
                 captureSession = null
 
-                val texture = textureView.surfaceTexture
+                val texture = textureView?.surfaceTexture
 
                 // We configure the size of default buffer to be the size of camera preview we want.
-                texture.setDefaultBufferSize(previewSize.width, previewSize.height)
+                texture?.setDefaultBufferSize(previewSize.width, previewSize.height)
 
                 // This is the output Surface we need to start preview.
                 mSurface = Surface(texture)
@@ -359,6 +345,10 @@ class CameraVideoTaker private constructor(
                                     previewRequestBuilder.set(
                                         CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                                    )
+                                    previewRequestBuilder.set(
+                                        CaptureRequest.STATISTICS_FACE_DETECT_MODE,
+                                        CameraMetadata.STATISTICS_FACE_DETECT_MODE_FULL
                                     )
 
                                     // Finally, we start displaying the camera preview.
@@ -614,9 +604,9 @@ class CameraVideoTaker private constructor(
             it.acquireNextImage(),
             cameraPrefernce == CameraCharacteristics.LENS_FACING_FRONT,
             currentSensorOrientation,
-            aspectRatio
+            aspectRatio,
+            captureCompleteCallback
         ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
-        captureCompleteCallback(file.absolutePath)
         orientationEventListener.enable()
     }
 
@@ -663,7 +653,10 @@ class CameraVideoTaker private constructor(
 
     private fun hasPermissionsGranted(permissions: Array<String>) =
         permissions.none {
-            ContextCompat.checkSelfPermission((context), it) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                (context),
+                it
+            ) != PackageManager.PERMISSION_GRANTED
         }
 
     private fun startBackgroundThread() {
@@ -698,7 +691,7 @@ class CameraVideoTaker private constructor(
     }
 
     private fun startRecordingVideo() {
-        if (cameraDevice == null || !textureView.isAvailable) return
+        if (cameraDevice == null || textureView?.isAvailable == false) return
 
         try {
             captureSession?.close()
@@ -801,7 +794,10 @@ class CameraVideoTaker private constructor(
         Log.e(TAG, "Display rotation : $displayRotation")
         when (displayRotation) {
             Surface.ROTATION_0, Surface.ROTATION_180 -> {
-                Log.e(TAG, "Display rotation : ${Surface.ROTATION_0} or ${Surface.ROTATION_180}")
+                Log.e(
+                    TAG,
+                    "Display rotation : ${Surface.ROTATION_0} or ${Surface.ROTATION_180}"
+                )
                 if (sensorOrientation == 90 || sensorOrientation == 270) {
                     swappedDimensions = true
                 }
@@ -823,16 +819,15 @@ class CameraVideoTaker private constructor(
         val rotation = context.windowManager.defaultDisplay.rotation
         val matrix = Matrix()
         val viewRect = RectF(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
-        val bufferRect = RectF(0f, 0f, previewSize.height.toFloat(), previewSize.width.toFloat())
+        val bufferRect =
+            RectF(0f, 0f, previewSize.height.toFloat(), previewSize.width.toFloat())
         val centerX = viewRect.centerX()
         val centerY = viewRect.centerY()
 
         if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY())
-            val scale = Math.max(
-                viewHeight.toFloat() / previewSize.height,
-                viewWidth.toFloat() / previewSize.width
-            )
+            val scale =
+                (viewHeight.toFloat() / previewSize.height).coerceAtLeast(viewWidth.toFloat() / previewSize.width)
             with(matrix) {
                 setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL)
                 postScale(scale, scale, centerX, centerY)
@@ -841,13 +836,11 @@ class CameraVideoTaker private constructor(
         } else if (Surface.ROTATION_180 == rotation) {
             matrix.postRotate(180f, centerX, centerY)
         }
-        textureView.setTransform(matrix)
-
-
+        textureView?.setTransform(matrix)
     }
 
     private fun showToast(stringMsg: String) {
-        Toast.makeText(context, stringMsg, Toast.LENGTH_SHORT).show()
+//        Toast.makeText(context, stringMsg, Toast.LENGTH_SHORT).show()
     }
 
     override fun onOptionChange(operationMode: OperationalMode) {
@@ -864,56 +857,31 @@ class CameraVideoTaker private constructor(
         }
     }
 
-    override fun onResumeView() {
-        startBackgroundThread()
-        if (textureView.isAvailable) {
-            openCamera(textureView.width, textureView.height)
-        } else {
-            textureView.surfaceTextureListener = surfaceTextureListener
-        }
-        mwasureSensor?.let {
-            sensormanager.registerListener(it, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
-        }
-    }
-
-    override fun onPauseView() {
-        try {
-            mwasureSensor?.let {
-                sensormanager.unregisterListener(it)
-            }
-            cameraOpenCloseLock.acquire()
-            captureSession?.close()
-            captureSession = null
-            cameraDevice?.close()
-            cameraDevice = null
-            imageReader?.let {
-                it.close()
-                imageReader = null
-            }
-            mediaRecorder?.let {
-                if (isRecordingVideo) {
-                    isRecordingVideo = false
-                    it.apply {
-                        stop()
-                        release()
-                    }
-                }
-            }
-
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        } finally {
-            cameraOpenCloseLock.release()
-        }
-    }
-
-    override fun onStopView() {
-        stopBackgroundThread()
-    }
-
     override fun clickCameraCapture() {
-        cameraOperationMode = OperationalMode.PICTURE
-        lockFocus()
+        if (shouldDetectFace) {
+            mCameraSource?.takePicture({
+
+            }, { img ->
+                img?.let {
+                    file = File(
+                        context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+                        "${System.currentTimeMillis()}-$PIC_FILE_NAME"
+                    )
+
+                    ImageSaverWorkerDetection(
+                        file,
+                        it,
+                        cameraPrefernce == CameraCharacteristics.LENS_FACING_FRONT,
+                        currentSensorOrientation,
+                        aspectRatio,
+                        captureCompleteCallback
+                    ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+                }
+            })
+        } else {
+            cameraOperationMode = OperationalMode.PICTURE
+            lockFocus()
+        }
     }
 
     override fun clickCameraViewToggle() {
@@ -936,7 +904,9 @@ class CameraVideoTaker private constructor(
         cameraOpenCloseLock.release()
 
         Log.i(TAG, "After closing all trying to re-open camera with preferred lance facing ")
-        openCamera(textureView.width, textureView.height)
+        textureView?.let {
+            openCamera(it.width, it.height)
+        }
     }
 
     override fun startVideoCapture(): Boolean {
@@ -988,7 +958,9 @@ class CameraVideoTaker private constructor(
         mediaRecorder?.release()
         cameraOpenCloseLock.release()
         Log.i(TAG, "After closing all trying to re-open camera with preferred lance facing ")
-        openCamera(textureView.width, textureView.height)
+        textureView?.let {
+            openCamera(it.width, it.height)
+        }
     }
 
     override fun clickCameraFlashToggle(): Boolean {
@@ -1001,6 +973,91 @@ class CameraVideoTaker private constructor(
                 useFlashMode = FlashMode.FORCE_ON
                 true
             }
+        }
+    }
+
+
+    //==============================================================================================
+// Camera Source Preview
+//==============================================================================================
+    /**
+     * Starts or restarts the camera source, if it exists.  If the camera source doesn't exist yet
+     * (e.g., because onResume was called before the camera source was created), this will be called
+     * again when the camera source is created.
+     */
+    private fun startCameraSource() { // check that the device has play services available.
+
+        if (mCameraSource != null) {
+            try {
+                cameraSourcePreview?.start(mCameraSource, graphicOverlay)
+            } catch (e: IOException) {
+                mCameraSource!!.release()
+                mCameraSource = null
+            }
+        }
+
+    }
+
+    override fun onResumeView() {
+        startBackgroundThread()
+        if (shouldDetectFace) {
+            startCameraSource()
+        } else {
+            if (textureView?.isAvailable == true) {
+                openCamera(textureView.width, textureView.height)
+            } else {
+                textureView?.surfaceTextureListener = surfaceTextureListener
+            }
+
+            measureSensor?.let {
+                sensormanager.registerListener(
+                    it,
+                    mAccelerometer,
+                    SensorManager.SENSOR_DELAY_NORMAL
+                )
+            }
+        }
+    }
+
+    override fun onPauseView() {
+        try {
+            measureSensor?.let {
+                sensormanager.unregisterListener(it)
+            }
+            cameraOpenCloseLock.acquire()
+            captureSession?.close()
+            captureSession = null
+            cameraDevice?.close()
+            cameraDevice = null
+            imageReader?.let {
+                it.close()
+                imageReader = null
+            }
+            mediaRecorder?.let {
+                if (isRecordingVideo) {
+                    isRecordingVideo = false
+                    it.apply {
+                        stop()
+                        release()
+                    }
+                }
+            }
+
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        } finally {
+            cameraOpenCloseLock.release()
+        }
+    }
+
+    override fun onStopView() {
+        stopBackgroundThread()
+        cameraSourcePreview?.stop()
+    }
+
+    override fun onDestroy() {
+        if (mCameraSource != null) {
+            mCameraSource!!.release()
         }
     }
 }

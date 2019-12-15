@@ -5,10 +5,17 @@
     android:layout_height="match_parent">
 
 
-    <com.internal.bodhidipta.camvid.view.AutoFitTextureView
-        android:id="@+id/cameraview"
+    <com.internal.bodhidipta.camvid.view.CameraSourcePreview
+        android:id="@+id/preview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <com.internal.bodhidipta.camvid.view.GraphicOverlay
+            android:id="@+id/faceOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.internal.bodhidipta.camvid.view.CameraSourcePreview>
 
     <RelativeLayout
         android:id="@+id/control"
