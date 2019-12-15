@@ -8,11 +8,43 @@ Feel free to contribute more ideas.
 
  This will return an instrance of the implementation class 
  
-                val cameraViewListener: CameraViewListener = CameraVideoTaker
-                .setCameraView(cameraview)
+ For Normal Camera and video operation-
+ 
+                val cameraViewListener: CameraViewListener = CamVidBuilder()
+                .setCameraView(
+                    CaptureOperationMode(
+                        preview
+                    )
+                )
                 .shouldCompress(true) // If not required dont need to send
                 .setRatio(CommonClass.ImageAspectRatio.FULL) // For full image or ONE:ONE
                 .getInitialise(it)
+                
+ For Face Detection mode(Front camera default)
+               
+              val cameraViewListener: CameraViewListener = CamVidBuilder()
+                .setCameraView(
+                    DetectorOperationMode(
+                        cameraSourcePreview = preview,
+                        graphicOverlay = faceOverlay,
+                        shouldDrawFace = true
+                    )
+                )
+                .setCaptureCallback {
+
+                }
+                .setDetectionCallback(object : FaceDetectionCallback {
+                    override fun onUpdateFaceCount(totalFace: List<Int>) {
+                       //To change body of created functions use File | Settings | File Templates.
+                    }
+
+                    override fun onFaceUpdate(face: Face?) {
+                         //To change body of created functions use File | Settings | File Templates.
+                    }
+
+                })
+                .getInitialise(it)
+
                 
 With the implementation class you can 
 
