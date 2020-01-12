@@ -238,7 +238,9 @@ internal class CameraVideoTaker constructor(
 
     private fun createDetectionCamera() {
         val detector: FaceDetector = FaceDetector.Builder(context)
-            .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
+            .setProminentFaceOnly(true)
+            .setTrackingEnabled(true)
+            .setClassificationType(FaceDetector.ALL_LANDMARKS)
             .build()
 
         detector.setProcessor(

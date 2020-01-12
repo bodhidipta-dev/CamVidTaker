@@ -1,6 +1,7 @@
 package com.internal.bodhidipta.camvid.cameravideotaker
 
 import android.app.Activity
+import android.graphics.RectF
 import android.hardware.SensorEventListener
 import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.vision.face.Face
@@ -26,12 +27,17 @@ class CamVidBuilder {
     private var captureCompleteCallback: (path: String) -> Unit = {}
     private var detectCallback: FaceDetectionCallback = object : FaceDetectionCallback {
         override fun onUpdateFaceCount(totalFace: List<Int>) {
-          //To change body of created functions use File | Settings | File Templates.
+            //To change body of created functions use File | Settings | File Templates.
         }
 
         override fun onFaceUpdate(face: Face?) {
             //To change body of created functions use File | Settings | File Templates.
         }
+
+        override fun onDrawRectangle(area: Float, rect: RectF) {
+            //To change body of created functions use File | Settings | File Templates.
+        }
+
 
     }
 

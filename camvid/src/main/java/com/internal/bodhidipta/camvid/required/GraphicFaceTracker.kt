@@ -12,7 +12,7 @@ internal class GraphicFaceTracker(
     private val drawface: Boolean?,
     private val detectCallback: FaceDetectionCallback
 ) : Tracker<Face?>() {
-    private val mFaceGraphic: FaceGraphic = FaceGraphic(mOverlay)
+    private val mFaceGraphic: FaceGraphic = FaceGraphic(mOverlay, detectCallback)
     /**
      * Start tracking the detected face instance within the face overlay.
      */

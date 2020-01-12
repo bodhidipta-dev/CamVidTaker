@@ -18,15 +18,20 @@ package com.internal.bodhidipta.camvid.view
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.util.Log
 import com.google.android.gms.vision.face.Face
+import com.internal.bodhidipta.camvid.cameravideotaker.FaceDetectionCallback
 import com.internal.bodhidipta.camvid.view.GraphicOverlay.Graphic
 
 /**
  * Graphic instance for rendering face position, orientation, and landmarks within an associated
  * graphic overlay view.
  */
-internal class FaceGraphic(overlay: GraphicOverlay) : Graphic(overlay) {
+internal class FaceGraphic(
+    overlay: GraphicOverlay,
+    private val faceDetectionCallback: FaceDetectionCallback
+) : Graphic(overlay) {
     private val mFacePositionPaint: Paint
     private val mIdPaint: Paint
     private val mBoxPaint: Paint
@@ -37,6 +42,7 @@ internal class FaceGraphic(overlay: GraphicOverlay) : Graphic(overlay) {
     fun setId(id: Int) {
         mFaceId = id
     }
+
     var drawFace = true
 
     /**
@@ -98,7 +104,7 @@ internal class FaceGraphic(overlay: GraphicOverlay) : Graphic(overlay) {
             val top = y - yOffset
             val right = x + xOffset
             val bottom = y + yOffset
-            if (drawFace){
+            if (drawFace) {
                 // Draws a circle at the position of the detected face, with the face's track id below.
                 it.drawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint)
                 it.drawText(
@@ -138,8 +144,10 @@ internal class FaceGraphic(overlay: GraphicOverlay) : Graphic(overlay) {
 
             }
 
-
-            Log.i("@sdf#", "Area: " + (2 * (right - left) + (bottom - top)))
+            faceDetectionCallback.onDrawRectangle(
+                (2 * (right - left) + (bottom - top)),
+                RectF(left, top, right, bottom)
+            )
         }
     }
 }
