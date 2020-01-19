@@ -19,6 +19,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.util.AttributeSet
 import android.util.Log
+import android.util.Size
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.ViewGroup
@@ -34,6 +35,7 @@ class CameraSourcePreview(
     private var mSurfaceAvailable = false
     private var mCameraSource: CameraSource? = null
     private var mOverlay: GraphicOverlay? = null
+    lateinit var optimalSize: Size
     @Throws(IOException::class)
     fun start(cameraSource: CameraSource?) {
         if (cameraSource == null) {
@@ -47,8 +49,13 @@ class CameraSourcePreview(
     }
 
     @Throws(IOException::class)
-    fun start(cameraSource: CameraSource?, overlay: GraphicOverlay?) {
+    fun start(
+        cameraSource: CameraSource?,
+        overlay: GraphicOverlay?,
+        opti: Size
+    ) {
         mOverlay = overlay
+        optimalSize = opti
         start(cameraSource)
     }
 
@@ -137,14 +144,8 @@ class CameraSourcePreview(
         val layoutWidth = right - left
         val layoutHeight = bottom - top
         // Computes height and width for potentially doing fit width.
-        var childWidth = layoutWidth
-        var childHeight =
-            (layoutWidth.toFloat() / width.toFloat() * height).toInt()
-        // If height is too tall using fit width, does fit height instead.
-        if (childHeight > layoutHeight) {
-            childHeight = layoutHeight
-            childWidth = (layoutHeight.toFloat() / height.toFloat() * width) as Int
-        }
+        var childHeight = layoutHeight
+        var childWidth = (layoutHeight.toFloat() / height.toFloat() * width).toInt()
         for (i in 0 until childCount) {
             getChildAt(i).layout(0, 0, childWidth, childHeight)
         }

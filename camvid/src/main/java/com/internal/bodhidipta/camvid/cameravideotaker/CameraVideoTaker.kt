@@ -17,6 +17,7 @@ import android.os.AsyncTask
 import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
 import android.view.OrientationEventListener
@@ -81,9 +82,6 @@ internal class CameraVideoTaker constructor(
             }
         }
         orientationEventListener.enable()
-
-        if (shouldDetectFace)
-            createDetectionCamera()
     }
 
 
@@ -239,7 +237,6 @@ internal class CameraVideoTaker constructor(
     private fun createDetectionCamera() {
         val detector: FaceDetector = FaceDetector.Builder(context)
             .setProminentFaceOnly(true)
-            .setTrackingEnabled(true)
             .setClassificationType(FaceDetector.ALL_LANDMARKS)
             .build()
 
@@ -264,9 +261,11 @@ internal class CameraVideoTaker constructor(
 // download completes on device.
 
         }
+ // adda camera largest
+        cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
         mCameraSource = CameraSource.Builder(context, detector)
-            .setRequestedPreviewSize(640, 480)
+            .setRequestedPreviewSize(previewSize.width, previewSize.height)
             .setFacing(CameraSource.CAMERA_FACING_FRONT)
             .setRequestedFps(10.0f)
             .build()
@@ -988,16 +987,62 @@ internal class CameraVideoTaker constructor(
      * again when the camera source is created.
      */
     private fun startCameraSource() { // check that the device has play services available.
-
-        if (mCameraSource != null) {
             try {
-                cameraSourcePreview?.start(mCameraSource, graphicOverlay)
+                cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+                for (cameraId in cameraManager.cameraIdList) {
+                    val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+                    val cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING)
+
+                    if (cameraDirection != null &&
+                        cameraDirection == cameraPrefernce
+                    ) {
+
+                        val map = characteristics.get(
+                            CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
+                        ) ?: continue
+
+                        sensorOrientation =
+                            characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
+                                ?: continue
+                        val displaySize = Point()
+                        context.windowManager.defaultDisplay.getSize(displaySize)
+
+                        val rotatedPreviewWidth = displaySize.x
+                        val rotatedPreviewHeight =  displaySize.y
+
+                        // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
+                        // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
+                        // garbage capture data.
+
+                        largest = Collections.max(
+                            listOf(*map.getOutputSizes(ImageFormat.JPEG)),
+                            CompareSizesByArea()
+                        )
+
+                        previewSize = chooseOptimalSize(
+                            map.getOutputSizes(SurfaceTexture::class.java),
+                            rotatedPreviewWidth,
+                            rotatedPreviewHeight,
+                            MAX_PREVIEW_WIDTH,
+                            MAX_PREVIEW_HEIGHT,
+                            largest
+                        )
+
+                        if (mCameraSource == null)
+                            createDetectionCamera()
+
+                        cameraSourcePreview?.start(
+                            mCameraSource,
+                            graphicOverlay,
+                            previewSize)
+
+                    }
+                }
             } catch (e: IOException) {
                 mCameraSource!!.release()
                 mCameraSource = null
             }
-        }
-
     }
 
     override fun onResumeView() {

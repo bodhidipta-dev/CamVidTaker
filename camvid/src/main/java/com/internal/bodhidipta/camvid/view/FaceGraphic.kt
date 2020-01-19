@@ -106,47 +106,48 @@ internal class FaceGraphic(
             val bottom = y + yOffset
             if (drawFace) {
                 // Draws a circle at the position of the detected face, with the face's track id below.
-                it.drawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint)
-                it.drawText(
-                    "id: $mFaceId",
-                    x + ID_X_OFFSET,
-                    y + ID_Y_OFFSET,
-                    mIdPaint
-                )
-                it.drawText(
-                    "happiness: " + String.format(
-                        "%.2f",
-                        face.isSmilingProbability
-                    ),
-                    x - ID_X_OFFSET,
-                    y - ID_Y_OFFSET,
-                    mIdPaint
-                )
-                it.drawText(
-                    "right eye: " + String.format(
-                        "%.2f",
-                        face.isRightEyeOpenProbability
-                    ),
-                    x + ID_X_OFFSET * 2,
-                    y + ID_Y_OFFSET * 2,
-                    mIdPaint
-                )
-                it.drawText(
-                    "left eye: " + String.format(
-                        "%.2f",
-                        face.isLeftEyeOpenProbability
-                    ),
-                    x - ID_X_OFFSET * 2,
-                    y - ID_Y_OFFSET * 2,
-                    mIdPaint
-                )
-                it.drawRect(left, top, right, bottom, mBoxPaint)
+//                it.drawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint)
+//                it.drawText(
+//                    "id: $mFaceId",
+//                    x + ID_X_OFFSET,
+//                    y + ID_Y_OFFSET,
+//                    mIdPaint
+//                )
+//                it.drawText(
+//                    "happiness: " + String.format(
+//                        "%.2f",
+//                        face.isSmilingProbability
+//                    ),
+//                    x - ID_X_OFFSET,
+//                    y - ID_Y_OFFSET,
+//                    mIdPaint
+//                )
+//                it.drawText(
+//                    "right eye: " + String.format(
+//                        "%.2f",
+//                        face.isRightEyeOpenProbability
+//                    ),
+//                    x + ID_X_OFFSET * 2,
+//                    y + ID_Y_OFFSET * 2,
+//                    mIdPaint
+//                )
+//                it.drawText(
+//                    "left eye: " + String.format(
+//                        "%.2f",
+//                        face.isLeftEyeOpenProbability
+//                    ),
+//                    x - ID_X_OFFSET * 2,
+//                    y - ID_Y_OFFSET * 2,
+//                    mIdPaint
+//                )
+//                it.drawRect(left, top, right, bottom, mBoxPaint)
 
             }
 
             faceDetectionCallback.onDrawRectangle(
                 (2 * (right - left) + (bottom - top)),
-                RectF(left, top, right, bottom)
+                RectF(left, top, right, bottom),
+                face
             )
         }
     }

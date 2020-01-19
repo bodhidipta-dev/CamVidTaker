@@ -10,5 +10,5 @@ import com.google.android.gms.vision.face.Face
 interface FaceDetectionCallback {
     fun onUpdateFaceCount(totalFace: List<Int>)
     fun onFaceUpdate(face: Face?)
-    fun onDrawRectangle(area: Float, rect: RectF)
+    fun onDrawRectangle(area: Float, rect: RectF,face: Face?)
 }

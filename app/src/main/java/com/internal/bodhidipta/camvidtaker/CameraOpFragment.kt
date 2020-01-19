@@ -1,5 +1,6 @@
 package com.internal.bodhidipta.camvidtaker
 
+import android.graphics.RectF
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
@@ -53,12 +54,18 @@ class CameraOpFragment : Fragment() {
                 }
                 .setDetectionCallback(object : FaceDetectionCallback {
                     override fun onUpdateFaceCount(totalFace: List<Int>) {
-                       //To change body of created functions use File | Settings | File Templates.
+                        //To change body of created functions use File | Settings | File Templates.
                     }
 
                     override fun onFaceUpdate(face: Face?) {
+                        //To change body of created functions use File | Settings | File Templates.
+                    }
+
+                    override fun onDrawRectangle(area: Float, rect: RectF, face: Face?) {
+
                          //To change body of created functions use File | Settings | File Templates.
                     }
+
 
                 })
 
